@@ -1,14 +1,20 @@
 package main
 
 import (
+	// "encoding/base64"
 	"fmt"
 	"io"
+
+	// "mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 	"github.com/google/uuid"
+	// "golang.org/x/tools/go/analysis/passes/defers"
 )
 
 func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Request) {
@@ -48,12 +54,6 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	defer fileData.Close()
-
-	imgData, err := io.ReadAll(fileData)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Unable to read file data", err)
-		return
-	}
 	
 	vid, err := cfg.db.GetVideo(videoID)
 	if err != nil {
@@ -65,12 +65,30 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	newThumb := thumbnail{
-		data: imgData,
 		mediaType: fileHeader.Header.Get("Content-Type"),
 	}
-	videoThumbnails[videoID] = newThumb
+	FILE_PATH := filepath.Join(cfg.assetsRoot, videoID.String()) + "." + newThumb.mediaType[6:] 
 
-	thumbnailUrl := "http://localhost:" + string(cfg.port) + "/api/thumbnails/" + videoID.String()
+	println(FILE_PATH, "filepath: 77")
+	file, err := os.Create(FILE_PATH)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to create a new file", err)
+		return
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, fileData)
+	
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to copy data to a new file", err)
+		return
+	}
+	println(file)
+
+	// imgStr := base64.StdEncoding.EncodeToString(imgData)
+
+	thumbnailUrl := "http://localhost:" + "5500" + "/assets/" + videoID.String() + "." + newThumb.mediaType[6:]
 
 	vidParams := database.CreateVideoParams{
 		Title: vid.Title,
@@ -88,6 +106,5 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusBadRequest, "Failed to update video (db)", err)
 		return
 	}
-	println(thumbnailUrl, newVideo.ThumbnailURL)
 	respondWithJSON(w, http.StatusOK, newVideo)
 }
