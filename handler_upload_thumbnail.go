@@ -67,6 +67,12 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	newThumb := thumbnail{
 		mediaType: fileHeader.Header.Get("Content-Type"),
 	}
+
+	if newThumb.mediaType[:5] != "image" {
+		respondWithError(w, http.StatusBadRequest, "Not an image", err)
+		return
+	}
+
 	FILE_PATH := filepath.Join(cfg.assetsRoot, videoID.String()) + "." + newThumb.mediaType[6:] 
 
 	println(FILE_PATH, "filepath: 77")
@@ -88,7 +94,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 
 	// imgStr := base64.StdEncoding.EncodeToString(imgData)
 
-	thumbnailUrl := "http://localhost:" + "5500" + "/assets/" + videoID.String() + "." + newThumb.mediaType[6:]
+	thumbnailUrl := "http://localhost:" + cfg.port + "/assets/" + videoID.String() + "." + newThumb.mediaType[6:]
 
 	vidParams := database.CreateVideoParams{
 		Title: vid.Title,
