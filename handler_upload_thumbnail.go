@@ -1,7 +1,8 @@
 package main
 
 import (
-	// "encoding/base64"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"io"
 
@@ -48,6 +49,14 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 
 	// TODO: implement the upload here
 
+	key := make([]byte, 32)
+	_, err = rand.Read(key)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "could not read rand key", err)
+		return
+	}
+	fileNameStr := base64.RawURLEncoding.EncodeToString(key)
+
 	fileData, fileHeader, err := r.FormFile("thumbnail")
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Unable to parse form file", err)
@@ -73,9 +82,8 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	FILE_PATH := filepath.Join(cfg.assetsRoot, videoID.String()) + "." + newThumb.mediaType[6:] 
+	FILE_PATH := filepath.Join(cfg.assetsRoot, fileNameStr) + "." + newThumb.mediaType[6:] 
 
-	println(FILE_PATH, "filepath: 77")
 	file, err := os.Create(FILE_PATH)
 
 	if err != nil {
@@ -91,10 +99,8 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	println(file)
-
-	// imgStr := base64.StdEncoding.EncodeToString(imgData)
-
-	thumbnailUrl := "http://localhost:" + cfg.port + "/assets/" + videoID.String() + "." + newThumb.mediaType[6:]
+	
+	thumbnailUrl := "http://localhost:" + cfg.port + "/assets/" + fileNameStr + "." + newThumb.mediaType[6:]
 
 	vidParams := database.CreateVideoParams{
 		Title: vid.Title,
