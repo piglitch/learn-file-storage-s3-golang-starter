@@ -45,7 +45,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	fmt.Println("uploading thumbnail for video", videoID, "by user", userID)
+	fmt.Println("uploading thumbnail for video", videoID, "by user ", userID)
 
 	// TODO: implement the upload here
 
@@ -73,16 +73,15 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusUnauthorized, "Unauthorized access", err)
 		return
 	}
-	newThumb := thumbnail{
-		mediaType: fileHeader.Header.Get("Content-Type"),
-	}
 
-	if newThumb.mediaType[:5] != "image" {
+	mediaType := fileHeader.Header.Get("Content-Type")
+
+	if mediaType[:5] != "image" {
 		respondWithError(w, http.StatusBadRequest, "Not an image", err)
 		return
 	}
 
-	FILE_PATH := filepath.Join(cfg.assetsRoot, fileNameStr) + "." + newThumb.mediaType[6:] 
+	FILE_PATH := filepath.Join(cfg.assetsRoot, fileNameStr) + "." + mediaType[6:] 
 
 	file, err := os.Create(FILE_PATH)
 
@@ -98,9 +97,8 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusBadRequest, "Failed to copy data to a new file", err)
 		return
 	}
-	println(file)
 	
-	thumbnailUrl := "http://localhost:" + cfg.port + "/assets/" + fileNameStr + "." + newThumb.mediaType[6:]
+	thumbnailUrl := "http://localhost:" + cfg.port + "/assets/" + fileNameStr + "." + mediaType[6:]
 
 	vidParams := database.CreateVideoParams{
 		Title: vid.Title,
