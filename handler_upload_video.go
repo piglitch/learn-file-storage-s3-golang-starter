@@ -56,7 +56,8 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "could not read rand key", err)
 		return
 	}
-	fileNameStr := base64.RawURLEncoding.EncodeToString(key) + ".mp4"
+	randomStr := base64.RawURLEncoding.EncodeToString(key)
+	fileNameStr := randomStr + ".mp4"
 
 	fileData, fileHeader, err := r.FormFile("video")
 	if err != nil {
@@ -72,6 +73,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	
 	println("filename: ", fileNameStr)
 	file, err := os.CreateTemp("", fileNameStr)
 	if err != nil {
@@ -91,13 +93,24 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "Failed to set offset", err)
 		return
 	}
-
+	processedFilePath, err := processVideoForFastRestart(file.Name())
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Could not process the file", err)
+		return
+	}
 	aspectRatio, err := getVideoAspectRatio(file.Name())
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Could not get the aspect ratio", err)
 		return
 	}
-	
+
+	processedFile, err := os.Open(processedFilePath)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to open the file", err)
+		return
+	}
+	defer processedFile.Close()
+
 	dimensions := Dimensions{}
 	err = json.Unmarshal([]byte(aspectRatio), &dimensions)
 	if err != nil {
@@ -120,7 +133,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	cfg.s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(cfg.s3Bucket),
 		Key:         &fileNameStr,
-		Body:        file,
+		Body:        processedFile,
 		ContentType: &mediaType,
 	})
 
