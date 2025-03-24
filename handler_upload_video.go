@@ -25,6 +25,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "Invalid ID", err)
 		return
 	}
+	fmt.Println(videoID, "line 28")
 	maxMemory := 10 << 30
 	http.MaxBytesReader(w, r.Body, int64(maxMemory))
 
@@ -153,7 +154,6 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		VideoURL:          &videoUrl,
 		CreateVideoParams: vidParams,
 	}
-	println("vid id: ", newVideo.ID.String())
 	presignedVideo, err := cfg.dbVideoToSignedVideo(newVideo)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to generate presigned video", err)
@@ -164,5 +164,5 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "Failed to Update the video (db)", err)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, newVideo)
+	respondWithJSON(w, http.StatusOK, presignedVideo)
 }

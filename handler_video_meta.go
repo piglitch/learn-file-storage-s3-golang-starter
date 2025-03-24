@@ -39,7 +39,6 @@ func (cfg *apiConfig) handlerVideoMetaCreate(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create video", err)
 		return
 	}
-
 	respondWithJSON(w, http.StatusCreated, video)
 }
 
@@ -94,12 +93,12 @@ func (cfg *apiConfig) handlerVideoGet(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusNotFound, "Couldn't get video", err)
 		return
 	}
-	presignedVideo, err := cfg.dbVideoToSignedVideo(video)
+	_, err = cfg.dbVideoToSignedVideo(video)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to generate presigned video", err)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, presignedVideo)
+	respondWithJSON(w, http.StatusOK, video)
 }
 
 func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Request) {
@@ -120,14 +119,14 @@ func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	preSignedVideos := []database.Video{}
-	for _, video := range videos {
-		presignedVideo, err := cfg.dbVideoToSignedVideo(video)
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, "Failed to generate presigned video", err)
-			return
-		}
-		preSignedVideos = append(preSignedVideos, presignedVideo)
-	}
-	respondWithJSON(w, http.StatusOK, preSignedVideos)
+	// preSignedVideos := []database.Video{}
+	// for _, video := range videos {
+	// 	presignedVideo, err := cfg.dbVideoToSignedVideo(video)
+	// 	if err != nil {
+	// 		respondWithError(w, http.StatusBadRequest, "Failed to generate presigned video", err)
+	// 		return
+	// 	}
+	// 	preSignedVideos = append(preSignedVideos, presignedVideo)
+	// }
+	respondWithJSON(w, http.StatusOK, videos)
 }

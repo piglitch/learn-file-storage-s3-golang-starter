@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -15,7 +14,7 @@ func (cfg *apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video
 		println("No video uploaded")
 		return database.Video{}, nil
 	}
-	fmt.Println("video url: ", *videoUrl)
+
 	urlSlice := strings.Split(*videoUrl, ",")
 	if len(urlSlice) < 2 {
 		println("No video uploaded")
