@@ -137,7 +137,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		ContentType: &mediaType,
 	})
 
-	videoUrl := "https://" + cfg.s3Bucket + ".s3." + cfg.s3Region + ".amazonaws.com/" + fileNameStr
+	videoUrl := cfg.s3Bucket + "," + fileNameStr 
 
 	vidParams := database.CreateVideoParams{
 		Title:       vidData.Title,
@@ -153,7 +153,13 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		VideoURL:          &videoUrl,
 		CreateVideoParams: vidParams,
 	}
-	err = cfg.db.UpdateVideo(newVideo)
+	println("vid id: ", newVideo.ID.String())
+	presignedVideo, err := cfg.dbVideoToSignedVideo(newVideo)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to generate presigned video", err)
+		return
+	}
+	err = cfg.db.UpdateVideo(presignedVideo)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to Update the video (db)", err)
 		return
