@@ -131,15 +131,20 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 
 	fileNameStr = orientation + "/" + fileNameStr
 
-	cfg.s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+	_, err = cfg.s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(cfg.s3Bucket),
 		Key:         &fileNameStr,
 		Body:        processedFile,
 		ContentType: &mediaType,
 	})
+	
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Could not upload to s3", err)
+		return
+	}
 
-	videoUrl := cfg.s3Bucket + "," + fileNameStr 
-
+	videoUrl := cfg.s3CfDistribution + "/" + fileNameStr  
+	println("video url: ", videoUrl)
 	vidParams := database.CreateVideoParams{
 		Title:       vidData.Title,
 		Description: vidData.Description,
@@ -154,15 +159,10 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		VideoURL:          &videoUrl,
 		CreateVideoParams: vidParams,
 	}
-	presignedVideo, err := cfg.dbVideoToSignedVideo(newVideo)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Failed to generate presigned video", err)
-		return
-	}
-	err = cfg.db.UpdateVideo(presignedVideo)
+	err = cfg.db.UpdateVideo(newVideo)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Failed to Update the video (db)", err)
 		return
 	}
-	respondWithJSON(w, http.StatusOK, presignedVideo)
+	respondWithJSON(w, http.StatusOK, newVideo)
 }

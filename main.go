@@ -75,16 +75,15 @@ func main() {
 	}
 	s3Client := s3.NewFromConfig(awsConfig)
 
-	s3CfDistribution := os.Getenv("S3_CF_DISTRO")
-	if s3CfDistribution == "" {
-		log.Fatal("S3_CF_DISTRO environment variable is not set")
-	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("PORT environment variable is not set")
 	}
-
+	
+	s3CfDistribution := os.Getenv("CLOUDFRONT_URL") 
+	if s3CfDistribution == "" {
+		log.Fatal("CLOUDFRONT_URL environment variable is not set")
+	}
 	cfg := apiConfig{
 		db:               db,
 		jwtSecret:        jwtSecret,
@@ -93,9 +92,9 @@ func main() {
 		assetsRoot:       assetsRoot,
 		s3Bucket:         s3Bucket,
 		s3Region:         s3Region,
-		s3CfDistribution: s3CfDistribution,
 		port:             port,
 		s3Client: 				s3Client,
+		s3CfDistribution: s3CfDistribution,
 	}	
 
 	err = cfg.ensureAssetsDir()
